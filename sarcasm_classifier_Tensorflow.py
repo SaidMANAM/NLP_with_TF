@@ -1,58 +1,55 @@
-from tensorflow.keras.preprocessing.text  import Tokenizer
-from tensorflow.keras.preprocessing.sequence   import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 import json
 import numpy as np
+import tensorflow as tf
 
+class myCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs={}):
+        if (logs.get('accuracy') > 0.99 and logs.get('val_accuracy') > 0.90):
+            self.model.stop_training = True
 
+# importing the json file for the dataset
 
-with open('/home/said/Téléchargements/sarcasm_dataset/sarcasm.json','r') as f:
-    data=json.load(f)
+with open('/home/said/Téléchargements/sarcasm_dataset/sarcasm.json', 'r') as f:
+    data = json.load(f)
 
-#print(data)#checking if the file is well uploaded
-sentences=[]
-labels=[]
-
-
+#instanciating objects and creating variables
+callback=myCallback()
+sentences = []
+labels = []
 vocab_size = 10000
 embedding_dim = 16
 max_length = 100
-trunc_type='post'
-padding_type='post'
-num_epochs = 30
+trunc_type = 'post'
+padding_type = 'post'
+num_epochs = 50
 training_size = 20000
 
 for item in data:
-    #print("item",item)
     sentences.append(item['headline'])
-
     labels.append(item['is_sarcastic'])
 
-
-
-#print("headline", sentences)
-#print("\n")
-#print("is_sarcastic", labels)
-
+# Splitting data into training_validation sets
 training_sentences = sentences[0:training_size]
 testing_sentences = sentences[training_size:]
 training_labels = labels[0:training_size]
 testing_labels = labels[training_size:]
 
-
-tokenizer=Tokenizer(num_words=vocab_size,oov_token="<OOV>")
+# tokenizing and padding the sequences
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
 tokenizer.fit_on_texts(training_sentences)
-word_index=tokenizer.word_index
-training_sentences= tokenizer.texts_to_sequences(training_sentences)
-training_padded=pad_sequences(training_sentences)
-
+word_index = tokenizer.word_index
+training_sentences = tokenizer.texts_to_sequences(training_sentences)
+training_padded = pad_sequences(training_sentences)
 testing_sequences = tokenizer.texts_to_sequences(testing_sentences)
 testing_padded = pad_sequences(testing_sequences, maxlen=max_length, padding='post', truncating='post')
-
 training_padded = np.array(training_padded)
 training_labels = np.array(training_labels)
 testing_padded = np.array(testing_padded)
 testing_labels = np.array(testing_labels)
 
+#MODEL
 model = tf.keras.Sequential([
     tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length),
     tf.keras.layers.GlobalAveragePooling1D(),
@@ -60,9 +57,8 @@ model = tf.keras.Sequential([
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
 
-model.summary()
-
-history = model.fit(training_padded, training_labels, epochs=num_epochs, validation_data=(testing_padded, testing_labels), verbose=2)
+history = model.fit(training_padded, training_labels, epochs=num_epochs,
+                    validation_data=(testing_padded, testing_labels), verbose=2)

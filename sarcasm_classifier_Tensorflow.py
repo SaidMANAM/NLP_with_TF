@@ -53,6 +53,7 @@ testing_labels = np.array(testing_labels)
 model = tf.keras.Sequential([
     tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length),
     tf.keras.layers.GlobalAveragePooling1D(),
+    tf.keras.layers.Dropout(0.5),
     tf.keras.layers.Dense(24, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
@@ -62,3 +63,20 @@ model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy']
 
 history = model.fit(training_padded, training_labels, epochs=num_epochs,
                     validation_data=(testing_padded, testing_labels), verbose=2)
+
+def prediction( mymodel, test,  labels):
+    pred=mymodel.predict(test)
+    print(test[0])
+    print(labels[0])
+    mae = tf.keras.losses.MeanAbsoluteError()
+    mae(pred,labels)
+    i=0
+    for elt in pred:
+        if (elt>0.5) :
+            print("the sentence number {} is sarcastic".format(i))
+        else:
+            print("the sentence number %f is not sarcastic".format(i))
+    i=i+1
+
+    return pred,mae
+predi=prediction( model, testing_padded,  testing_labels)

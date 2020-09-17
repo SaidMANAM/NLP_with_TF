@@ -66,8 +66,6 @@ history = model.fit(training_padded, training_labels, epochs=num_epochs,
 
 def prediction( mymodel, test,  labels):
     pred=mymodel.predict(test)
-    print(test[0])
-    print(labels[0])
     mae = tf.keras.losses.MeanAbsoluteError()
     mae(pred,labels)
     i=0
@@ -75,8 +73,16 @@ def prediction( mymodel, test,  labels):
         if (elt>0.5) :
             print("the sentence number {} is sarcastic".format(i))
         else:
-            print("the sentence number %f is not sarcastic".format(i))
+            print("the sentence number {} is not sarcastic".format(i))
     i=i+1
 
     return pred,mae
-predi=prediction( model, testing_padded,  testing_labels)
+
+sentence=["France won the world cup in 2018",
+          "Forecasters call for weather on Monday",
+          "Cows lose their jobs as milk prices drop"]
+t=[0,1,1]
+sequences=tokenizer.texts_to_sequences(sentence)
+padded=pad_sequences(sequences)
+predi=prediction( model, padded,  t)
+
